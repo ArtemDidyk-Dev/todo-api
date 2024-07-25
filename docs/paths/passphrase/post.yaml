@@ -1,0 +1,24 @@
+summary: Створити пароль фразу
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          name:
+            type: string
+      example:
+        name: "hello world"
+responses:
+  '201':
+    description: пароль фразу успішно створена
+  '422':
+    description: Невірний запит
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string

@@ -1,0 +1,28 @@
+summary: Видалити задачу за ID
+parameters:
+  - name: passphrase
+    in: query
+    required: true
+    schema:
+      type: string
+    description: passphrase для фільтрації задач
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: string
+    description: Ідентифікатор задачі
+responses:
+  '204':
+    description: Задача успішно видалена
+  '404':
+    description: Задача не знайдена
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Task with id {id} not found"
+#  http://localhost:8950/api/v1/tasks?passphrase=yf63zcamilsglhrb

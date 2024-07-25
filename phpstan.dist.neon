@@ -1,0 +1,10 @@
+parameters:
+    level: 8
+    phpVersion: 80304
+    inferPrivatePropertyTypeFromConstructor: true
+    checkMissingIterableValueType: false
+    bootstrapFiles:
+            - vendor/autoload.php
+    paths:
+        - src
+        - tests

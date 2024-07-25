@@ -1,0 +1,4 @@
+get:
+  $ref: './todo/list.yaml'
+post:
+  $ref: './todo/post.yaml'

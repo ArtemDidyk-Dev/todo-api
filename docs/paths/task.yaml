@@ -1,0 +1,6 @@
+get:
+  $ref: './todo/get.yaml'
+put:
+  $ref: './todo/put.yaml'
+delete:
+  $ref: './todo/delete.yaml'

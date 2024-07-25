@@ -1,0 +1,78 @@
+summary: Оновити задачу за ID
+parameters:
+  - name: passphrase
+    in: query
+    required: true
+    schema:
+      type: string
+    description: passphrase для фільтрації задач
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: string
+    description: Ідентифікатор задачі
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          title:
+            type: string
+          description:
+            type: string
+          isComplete:
+            type: boolean
+          dueDate:
+            type: string
+            format: date-time
+          priority:
+            type: integer
+responses:
+  '200':
+    description: Задача успішно оновлена
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            isComplete:
+              type: boolean
+            dueDate:
+              type: string
+              format: date-time
+            priority:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+  '404':
+    description: Задача не знайдена
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Task with id {id} not found"
+  '422':
+    description: Невірний запит
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string

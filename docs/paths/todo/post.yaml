@@ -1,0 +1,41 @@
+summary: Створити нову задачу
+parameters:
+  - name: passphrase
+    in: query
+    required: true
+    schema:
+      type: string
+    description: passphrase для фільтрації задач
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          title:
+            type: string
+          description:
+            type: string
+          dueDate:
+            type: DateTime
+            format: date-time
+          priority:
+            type: integer
+      example:
+        title: "Learn ASP.NET Core"
+        description: "Learn how to build web applications with ASP.NET Core"
+        dueDate: "2022-12-31T00:00:00"
+        priority: 2
+responses:
+  '201':
+    description: Задача успішно створена
+  '422':
+    description: Невірний запит
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string

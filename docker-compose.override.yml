@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:
+  php:
+    build:
+#      target: php
+      context: .
+      target: php-debug
+    volumes:
+      - ./:/srv/app
+      - ./var:/srv/app/var:rw
+      - ./docker/php/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.dev.ini:ro
+    env_file:
+      - .env.local
+    environment:
+      - XDEBUG_MODE=${XDEBUG_MODE:-debug}
+
+  caddy:
+    build:
+      target: caddy
+      context: .
+    volumes:
+      - ./public:/srv/app/public:ro
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro

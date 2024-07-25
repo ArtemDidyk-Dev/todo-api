@@ -1,0 +1,2 @@
+post:
+  $ref: './passphrase/post.yaml'

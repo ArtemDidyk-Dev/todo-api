@@ -1,0 +1,60 @@
+summary: Отримати список задач за passphrase
+parameters:
+  - name: passphrase
+    in: query
+    required: true
+    schema:
+      type: string
+    description: passphrase для фільтрації задач
+responses:
+  '200':
+    description: Список задач
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            passphrase:
+              type: string
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  isComplete:
+                    type: boolean
+                  dueDate:
+                    type: string
+                    format: date-time
+                  priority:
+                    type: integer
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
+            error:
+              type: string
+  '401':
+    description: Задачі не знайдені
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            passphrase:
+              type: string
+            data:
+              type: array
+              items:
+                type: object
+            error:
+              type: string
+              example: "Tasks for passphrase artem not found"
