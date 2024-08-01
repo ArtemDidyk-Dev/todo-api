@@ -7,7 +7,8 @@ namespace App\Service;
 use App\Builder\TaskBuilder;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
-use App\DTO\Task as TaskDTO;
+use App\DTO\TaskResponse as TaskResponseDTO;
+use App\DTO\Task as TaskDto;
 use App\Manager\TaskListManager;
 use App\Repository\PassphraseRepository;
 use App\Repository\TaskRepository;
@@ -28,7 +29,7 @@ final readonly class TaskServiceService implements TaskServiceInterface
     ) {
     }
 
-    public function createTask(PassphraseDTO $passphraseDTO, TaskDTO $taskDTO): TaskDTO
+    public function createTask(PassphraseDTO $passphraseDTO, TaskDTO $taskDTO): TaskResponseDTO
     {
         $passphrase = $this->passphraseRepository->findOneBy([
             'name' => $passphraseDTO->passphrase,
@@ -62,7 +63,7 @@ final readonly class TaskServiceService implements TaskServiceInterface
             );
     }
 
-    public function getTask(PassphraseDTO $passphraseDTO, int $id): TaskDTO
+    public function getTask(PassphraseDTO $passphraseDTO, int $id): TaskResponseDTO
     {
         $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
         if ($data === null) {
@@ -82,7 +83,7 @@ final readonly class TaskServiceService implements TaskServiceInterface
         $this->manager->flush();
     }
 
-    public function updateTask(PassphraseDTO $passphraseDTO, int $id, TaskDTO $taskDTO): TaskDTO
+    public function updateTask(PassphraseDTO $passphraseDTO, int $id, TaskDTO $taskDTO): TaskResponseDTO
     {
         $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
         if ($data === null) {

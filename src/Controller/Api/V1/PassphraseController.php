@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1;
 
-use App\DTO\Passphrase as PassphraseDTO;
+use App\DTO\PassphraseResponse as PassphraseResponseDTO;
 use App\Serializer\AccessGroup;
 use App\Service\PassphraseInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -29,7 +29,7 @@ final class PassphraseController extends AbstractController
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'phrase successfully created',
-                content: [new Model( type: PassphraseDTO::class, groups: [AccessGroup::PASSPHRASE_CREATE_RESPONSE])]
+                content: [new Model( type: PassphraseResponseDTO::class, groups: [AccessGroup::PASSPHRASE_CREATE_RESPONSE])]
             )
         ]
     )]

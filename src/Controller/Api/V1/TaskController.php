@@ -7,6 +7,7 @@ namespace App\Controller\Api\V1;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task;
+use App\DTO\TaskResponse;
 use App\Enum\PriorityEnum;
 use App\Enum\TaskStatusEnum;
 use App\Serializer\AccessGroup;
@@ -15,7 +16,6 @@ use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes\Delete;
 use OpenApi\Attributes\Examples;
 use OpenApi\Attributes\Get;
-use OpenApi\Attributes\JsonContent;
 use OpenApi\Attributes\MediaType;
 use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes\Post;
@@ -104,7 +104,7 @@ final class TaskController extends AbstractController
                 response: HttpResponse::HTTP_OK,
                 description: 'Task update',
                 content: [
-                    new Model(type: Task::class, groups: [
+                    new Model(type: TaskResponse::class, groups: [
                         AccessGroup::TASKS_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),
@@ -133,12 +133,6 @@ final class TaskController extends AbstractController
         summary: 'Get Tasks',
         tags: ['Tasks'],
         parameters: [
-            new Parameter(
-                name: 'id',
-                description: 'The ID of the task to delete.',
-                in: 'path',
-                required: true,
-            ),
             new Parameter(
                 name: 'passphrase',
                 description: 'The passphrase of the task to delete.',
@@ -196,7 +190,7 @@ final class TaskController extends AbstractController
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'Tasks get',
-                content: [new Model(type: Task::class, groups: [AccessGroup::TASKS_READ])]
+                content: [new Model(type: TaskResponse::class, groups: [AccessGroup::TASKS_READ])]
             ),
         ]
     )]
@@ -241,7 +235,7 @@ final class TaskController extends AbstractController
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'Task get by id',
-                content: [new Model(type: Task::class, groups: [AccessGroup::TASKS_READ])]
+                content: [new Model(type: TaskResponse::class, groups: [AccessGroup::TASKS_READ])]
             ),
         ]
     )]
@@ -368,7 +362,7 @@ final class TaskController extends AbstractController
                 response: HttpResponse::HTTP_OK,
                 description: 'Task update',
                 content: [
-                    new Model(type: Task::class, groups: [
+                    new Model(type: TaskResponse::class, groups: [
                         AccessGroup::TASKS_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),

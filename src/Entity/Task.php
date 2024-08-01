@@ -23,7 +23,7 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
@@ -35,7 +35,7 @@ class Task
     #[ORM\Column(type: Types::TEXT)]
     private string $description;
 
-    #[Assert\NotBlank]
+
     #[Assert\DateTime]
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?DateTimeImmutable $dueDate = null;
@@ -61,9 +61,16 @@ class Task
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $updated;
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getTitle(): string
@@ -95,7 +102,7 @@ class Task
         return $this->dueDate;
     }
 
-    public function setDueDate(DateTimeImmutable $dueDate): self
+    public function setDueDate(?DateTimeImmutable $dueDate): self
     {
         $this->dueDate = $dueDate;
 
