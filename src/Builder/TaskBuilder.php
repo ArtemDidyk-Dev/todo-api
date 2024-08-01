@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Builder;
 
-use App\DTO\Passphrase;
+use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task as TaskDto;
 use App\Entity\Passphrase as PassphraseEntity;
 use App\Entity\Task as TaskEntity;
@@ -21,7 +21,7 @@ class TaskBuilder
             priority: $task->getPriority(),
             id: $task->getId(),
             isComplete: $task->isComplete(),
-            passphrase: new Passphrase($task->getPassphrase()?->getName())
+            passphrase: new PassphraseDTO($task->getPassphrase()->getName())
         );
     }
 

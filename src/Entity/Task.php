@@ -8,6 +8,7 @@ use AllowDynamicProperties;
 use App\Enum\PriorityEnum;
 use App\Enum\TaskStatusEnum;
 use App\Repository\TaskRepository;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
@@ -22,30 +23,25 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['task_details'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Type('string')]
-    #[Groups(['task_details'])]
     private string $title;
 
     #[Assert\NotBlank]
     #[Assert\Type('string')]
     #[ORM\Column(type: Types::TEXT)]
-    #[Groups(['task_details'])]
-    private ?string $description = null;
+    private string $description;
 
     #[Assert\NotBlank]
     #[Assert\DateTime]
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['task_details'])]
-    private ?\DateTimeImmutable $dueDate = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?DateTimeImmutable $dueDate = null;
 
     #[ORM\Column(type: 'integer', enumType: PriorityEnum::class)]
     #[Assert\Type('integer')]
-    #[Groups(['task_details'])]
     private PriorityEnum $priority = PriorityEnum::Low;
 
     #[ORM\Column(type: 'string', enumType: TaskStatusEnum::class)]
@@ -54,19 +50,16 @@ class Task
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Passphrase $passphrase = null;
+    private Passphrase $passphrase;
 
-    #[ORM\Column(nullable: true)]
-    #[Groups(['task_details'])]
+    #[ORM\Column(type: Types::BOOLEAN)]
     private bool $isComplete = false;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['task_details'])]
-    private \DateTimeImmutable $created;
+    private DateTimeImmutable $created;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['task_details'])]
-    private \DateTimeImmutable $updated;
+    private DateTimeImmutable $updated;
 
     public function getId(): ?int
     {
@@ -85,7 +78,7 @@ class Task
         return $this;
     }
 
-    public function getDescription(): ?string
+    public function getDescription(): string
     {
         return $this->description;
     }
@@ -97,12 +90,12 @@ class Task
         return $this;
     }
 
-    public function getDueDate(): ?\DateTimeImmutable
+    public function getDueDate(): ?DateTimeImmutable
     {
         return $this->dueDate;
     }
 
-    public function setDueDate(\DateTimeImmutable $dueDate): self
+    public function setDueDate(DateTimeImmutable $dueDate): self
     {
         $this->dueDate = $dueDate;
 
@@ -121,19 +114,19 @@ class Task
         return $this;
     }
 
-    public function getPassphrase(): ?Passphrase
+    public function getPassphrase(): Passphrase
     {
         return $this->passphrase;
     }
 
-    public function setPassphrase(?Passphrase $passphrase): self
+    public function setPassphrase(Passphrase $passphrase): self
     {
         $this->passphrase = $passphrase;
 
         return $this;
     }
 
-    public function isComplete(): ?bool
+    public function isComplete(): bool
     {
         return $this->isComplete;
     }
@@ -145,23 +138,23 @@ class Task
         return $this;
     }
 
-    public function getCreated(): ?\DateTimeImmutable
+    public function getCreated(): ?DateTimeImmutable
     {
         return $this->created;
     }
 
-    public function setCreated(?\DateTimeImmutable $created): self
+    public function setCreated(?DateTimeImmutable $created): self
     {
         $this->created = $created;
         return $this;
     }
 
-    public function getUpdated(): ?\DateTimeImmutable
+    public function getUpdated(): ?DateTimeImmutable
     {
         return $this->updated;
     }
 
-    public function setUpdated(?\DateTimeImmutable $updated): self
+    public function setUpdated(?DateTimeImmutable $updated): self
     {
         $this->updated = $updated;
         return $this;
@@ -182,14 +175,14 @@ class Task
     #[ORM\PrePersist]
     public function prePersist(): void
     {
-        $this->created = new \DateTimeImmutable();
-        $this->updated = new \DateTimeImmutable();
+        $this->created = new DateTimeImmutable();
+        $this->updated = new DateTimeImmutable();
     }
 
     #[ORM\PreUpdate]
     public function preUpdate(): void
     {
-        $this->updated = new \DateTimeImmutable();
+        $this->updated = new DateTimeImmutable();
     }
 
 }

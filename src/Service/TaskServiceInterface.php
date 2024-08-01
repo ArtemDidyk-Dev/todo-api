@@ -7,12 +7,13 @@ namespace App\Service;
 use App\DTO\Meta;
 use App\DTO\Passphrase;
 use App\DTO\Task;
+use Symfony\Component\HttpFoundation\Request;
 
-interface TaskInterface
+interface TaskServiceInterface
 {
     public function createTask(Passphrase $passphraseDTO, Task $taskDTO): Task;
 
-    public function getTasks(string $passphrase, Meta $meta): TaskList;
+    public function getTasks(Request $request, string $passphrase, Meta $meta): TaskList;
 
     public function getTask(Passphrase $passphraseDTO, int $id): Task;
 

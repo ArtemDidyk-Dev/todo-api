@@ -71,3 +71,11 @@ schema-update:
 
 # Setting 'help' as the default target
 .DEFAULT_GOAL := help
+
+db_local:
+	docker exec -it todo-php sh -c "\
+	php bin/console doctrine:database:drop --force; \
+	php bin/console doctrine:database:create; \
+	php bin/console doctrine:migrations:migrate -n; \
+	php bin/console doctrine:fixtures:load --env=dev -q;"
+

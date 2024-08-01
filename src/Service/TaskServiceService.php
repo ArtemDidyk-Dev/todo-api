@@ -8,12 +8,14 @@ use App\Builder\TaskBuilder;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task as TaskDTO;
+use App\Manager\TaskListManager;
 use App\Repository\PassphraseRepository;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Component\HttpFoundation\Request;
 
-final readonly class TaskService implements TaskInterface
+final readonly class TaskServiceService implements TaskServiceInterface
 {
     // TaskServiceInterface
     public function __construct(
@@ -22,6 +24,7 @@ final readonly class TaskService implements TaskInterface
         private TaskRepository $taskRepository,
         private TaskBuilder $taskBuilder,
         private PaginatorInterface $paginator,
+        private TaskListManager $taskListManager,
     ) {
     }
 
@@ -40,16 +43,15 @@ final readonly class TaskService implements TaskInterface
 
     }
 
-    public function getTasks(string $passphrase, Meta $meta): TaskList
+    public function getTasks(Request $request, string $passphrase, Meta $meta): TaskList
     {
-
         $passphraseData = $this->passphraseRepository->findOneBy([
             'name' => $passphrase,
         ]);
         if ($passphraseData === null) {
             throw new \InvalidArgumentException('Passphrase not found');
         }
-        $tasks = $this->taskRepository->getTasks($passphraseData->getId());
+        $tasks = $this->taskListManager->getList($passphraseData->getId(), $request);
         $paginator = $this->paginator->paginate($tasks, $meta->currentPage, $meta->itemsPerPage);
         return (new TaskList($this->taskBuilder))
             ->addTasks($paginator->getItems())
@@ -87,7 +89,7 @@ final readonly class TaskService implements TaskInterface
             throw new \InvalidArgumentException('Task not found');
         }
         $task = $this->taskBuilder->updateFromDto($data, $taskDTO);
-        $this->manager->flush($task);
+        $this->manager->flush();
 
         return $this->taskBuilder->mapToDto($task);
     }

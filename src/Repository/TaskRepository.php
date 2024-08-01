@@ -34,9 +34,8 @@ class TaskRepository extends ServiceEntityRepository
 
     public function getTasks(int $passphraseId): QueryBuilder
     {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.passphrase = :passphraseId')
+        return $this->createQueryBuilder('task')
+            ->andWhere('task.passphrase = :passphraseId')
             ->setParameter('passphraseId', $passphraseId);
-
     }
 }
