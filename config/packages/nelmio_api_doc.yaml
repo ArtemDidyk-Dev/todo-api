@@ -1,8 +1,8 @@
 nelmio_api_doc:
     documentation:
         info:
-            title: Todo Tasks
-            description: https://github.com/nelmio/NelmioApiDocBundle
+            title: Todo Tasks Api
+            description: https://github.com/ArtemDidyk-Dev/todo-api
             version: 1.0.0
     areas: # to filter documented areas
         default:
