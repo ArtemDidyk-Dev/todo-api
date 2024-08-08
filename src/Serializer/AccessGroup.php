@@ -14,5 +14,5 @@ class AccessGroup
 
     public const string TASKS_READ = 'task:read';
 
-
+    public const string TASKS_CREATE = 'task:create';
 }

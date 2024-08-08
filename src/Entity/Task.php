@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use AllowDynamicProperties;
 use App\Enum\PriorityEnum;
 use App\Enum\TaskStatusEnum;
 use App\Repository\TaskRepository;
@@ -14,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[AllowDynamicProperties] #[ORM\Entity(repositoryClass: TaskRepository::class)]
+#[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Index(columns: ['title'], name: 'task_title_idx')]
 #[HasLifecycleCallbacks]
 class Task

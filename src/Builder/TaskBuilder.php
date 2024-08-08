@@ -29,6 +29,7 @@ class TaskBuilder
     public function mapToModel(TaskDto $task, PassphraseEntity $passphrase): TaskEntity
     {
         $dueDate = $task->dueDate ? new \DateTimeImmutable($task->dueDate) : null;
+
         return (new TaskEntity())
             ->setTitle($task->title)
             ->setDescription($task->description)
@@ -48,6 +49,7 @@ class TaskBuilder
             ->setPriority($taskDTO->priority)
             ->setComplete($taskDTO->isComplete)
             ->setStatus($taskDTO->taskStatus);
+
         return $task;
     }
 }

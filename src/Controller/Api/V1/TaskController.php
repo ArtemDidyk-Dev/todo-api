@@ -15,6 +15,7 @@ use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes\Delete;
 use OpenApi\Attributes\Examples;
 use OpenApi\Attributes\Get;
+use OpenApi\Attributes\JsonContent;
 use OpenApi\Attributes\MediaType;
 use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes\Post;
@@ -45,28 +46,12 @@ final class TaskController extends AbstractController
         requestBody: new RequestBody(
             description: 'Data for create task.',
             required: true,
-            content: [
-                new MediaType(
-                    mediaType: 'application/json',
-                    schema: new Schema(
-                        properties: [
-                            new Property(property: 'title', title: 'title', type: 'string'),
-                            new Property(property: 'description', title: 'title', type: 'string'),
-                            new Property(property: 'dueDate', title: '2024-08-01 02:24:21', type: 'date'),
-                            new Property(
-                                property: 'taskStatus',
-                                title: 'created',
-                                type: 'string',
-                                example: 'created'
-                            ),
-                            new Property(property: 'priority', title: '1', type: 'integer', example: 1),
-                            new Property(property: 'isComplete', title: 'true', type: 'boolean', example: true),
-
-                        ],
-                        type: 'object',
-                    )
-                ),
-            ]
+            content: new JsonContent(
+                ref: new Model(
+                    type: Task::class,
+                    groups: [AccessGroup::TASKS_CREATE]
+                )
+            )
         ),
         tags: ['Tasks'],
         parameters: [
@@ -90,19 +75,26 @@ final class TaskController extends AbstractController
             ),
         ]
     )]
-    #[Route('tasks', name: 'tasks_create', methods: 'POST', format: 'json')]
+    #[Route('tasks', name: 'tasks_create', methods: 'POST')]
     public function create(
-        #[MapQueryString]
+        #[MapQueryString(
+            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
+        )]
         PassphraseDTO $passphraseDTO,
-        #[MapRequestPayload]
+        #[MapRequestPayload(
+            serializationContext: ['groups' => [AccessGroup::TASKS_CREATE]],
+            validationGroups: [AccessGroup::TASKS_CREATE]
+        )]
         Task $taskDTO
     ): JsonResponse {
+
         try {
             $task = $this->taskService->createTask($passphraseDTO, $taskDTO);
+
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
             ]);
 
         } catch (\InvalidArgumentException $exception) {
@@ -166,7 +158,9 @@ final class TaskController extends AbstractController
     #[Route('tasks', name: 'tasks_index', methods: 'GET', format: 'json')]
     public function index(
         Request $request,
-        #[MapQueryString]
+        #[MapQueryString(
+            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
+        )]
         PassphraseDTO $passphraseDTO,
         #[MapQueryString]
         Meta $meta
@@ -180,10 +174,14 @@ final class TaskController extends AbstractController
                 'meta' => $tasks->getMeta(),
             ];
 
-            return $this->json($data
-            , HttpResponse::HTTP_CREATED, [], [
-                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
-            ]);
+            return $this->json(
+                $data
+                ,
+                HttpResponse::HTTP_CREATED, [],
+                [
+                    'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                ]
+            );
 
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
@@ -211,14 +209,20 @@ final class TaskController extends AbstractController
         ]
     )]
     #[Route('task/{id}', name: 'tasks_show', methods: 'GET', format: 'json')]
-    public function show(#[MapQueryString] PassphraseDTO $passphraseDTO, int $id): JsonResponse
-    {
+    public function show(
+        #[MapQueryString(
+            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
+        )]
+        PassphraseDTO $passphraseDTO,
+        int $id
+    ): JsonResponse {
         try {
             $task = $this->taskService->getTask($passphraseDTO, id: $id);
+
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
             ]);
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
@@ -247,8 +251,13 @@ final class TaskController extends AbstractController
         ]
     )]
     #[Route('task/{id}', name: 'tasks_destroy', methods: 'DELETE', format: 'json')]
-    public function destroy(#[MapQueryString] PassphraseDTO $passphraseDTO, int $id): JsonResponse
-    {
+    public function destroy(
+        #[MapQueryString(
+            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
+        )]
+        PassphraseDTO $passphraseDTO,
+        int $id
+    ): JsonResponse {
         try {
             $this->taskService->destroyTask($passphraseDTO, id: $id);
 
@@ -261,30 +270,14 @@ final class TaskController extends AbstractController
     #[Put(
         summary: 'Update Task',
         requestBody: new RequestBody(
-            description: 'Data for updating a task.',
+            description: 'Data for create task.',
             required: true,
-            content: [
-                new MediaType(
-                    mediaType: 'application/json',
-                    schema: new Schema(
-                        properties: [
-                            new Property(property: 'title', title: 'title', type: 'string'),
-                            new Property(property: 'description', title: 'title', type: 'string'),
-                            new Property(property: 'dueDate', title: '2024-08-01 02:24:21', type: 'date'),
-                            new Property(
-                                property: 'taskStatus',
-                                title: 'created',
-                                type: 'string',
-                                example: 'created'
-                            ),
-                            new Property(property: 'priority', title: '1', type: 'integer', example: 1),
-                            new Property(property: 'isComplete', title: 'true', type: 'boolean', example: true),
-
-                        ],
-                        type: 'object',
-                    )
-                ),
-            ]
+            content: new JsonContent(
+                ref: new Model(
+                    type: Task::class,
+                    groups: [AccessGroup::TASKS_CREATE]
+                )
+            )
         ),
         tags: ['Tasks'],
         parameters: [
@@ -310,11 +303,18 @@ final class TaskController extends AbstractController
         ]
     )]
     #[Route('task/{id}', name: 'tasks_update', methods: 'PUT', format: 'json')]
+
+
     public function update(
-        #[MapQueryString]
+        #[MapQueryString(
+            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
+        )]
         PassphraseDTO $passphraseDTO,
         int $id,
-        #[MapRequestPayload]
+        #[MapRequestPayload(
+            serializationContext: ['groups' => [AccessGroup::TASKS_CREATE]],
+            validationGroups: [AccessGroup::TASKS_CREATE]
+        )]
         Task $taskDTO
     ): JsonResponse {
         try {
@@ -323,7 +323,7 @@ final class TaskController extends AbstractController
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
             ]);
 
         } catch (\InvalidArgumentException $exception) {

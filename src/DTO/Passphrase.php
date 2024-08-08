@@ -6,7 +6,7 @@ namespace App\DTO;
 
 use App\Serializer\AccessGroup;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Serializer\Attribute\Ignore;
+
 use Symfony\Component\Validator\Constraints as Assert;
 
 final readonly class Passphrase
@@ -19,7 +19,7 @@ final readonly class Passphrase
 
         #[Assert\Type('int')]
         #[Groups([AccessGroup::PASSPHRASE_CREATE])]
-        public int $id = 0,
+        public ?int $id = null,
     ) {
     }
 }
