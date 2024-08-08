@@ -26,7 +26,7 @@ final class TaskList implements Iterator
     public function addTasks(array $tasks): self
     {
         foreach ($tasks as $task) {
-           $this->addItem($this->taskBuilder->mapToDto($task));
+            $this->addItem($this->taskBuilder->mapToDto($task));
         }
         return $this;
     }

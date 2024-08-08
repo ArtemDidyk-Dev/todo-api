@@ -12,7 +12,6 @@ use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
-use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[AllowDynamicProperties] #[ORM\Entity(repositoryClass: TaskRepository::class)]
@@ -34,7 +33,6 @@ class Task
     #[Assert\Type('string')]
     #[ORM\Column(type: Types::TEXT)]
     private string $description;
-
 
     #[Assert\DateTime]
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
@@ -172,7 +170,7 @@ class Task
         return $this->status;
     }
 
-    public function setStatus(TaskStatusEnum $status): Task
+    public function setStatus(TaskStatusEnum $status): self
     {
         $this->status = $status;
 
@@ -191,5 +189,4 @@ class Task
     {
         $this->updated = new DateTimeImmutable();
     }
-
 }

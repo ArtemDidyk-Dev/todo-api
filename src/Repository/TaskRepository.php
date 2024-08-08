@@ -38,4 +38,16 @@ class TaskRepository extends ServiceEntityRepository
             ->andWhere('task.passphrase = :passphraseId')
             ->setParameter('passphraseId', $passphraseId);
     }
+
+    public function getAll(string $passphrase): array
+    {
+
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.passphrase', 't')
+            ->andWhere('t.name = :passphraseName')
+            ->setParameter('passphraseName', $passphrase)
+            ->getQuery()
+            ->getResult();
+
+    }
 }

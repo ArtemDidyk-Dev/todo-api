@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Manager;
 
 use App\Repository\TaskRepository;
@@ -18,7 +20,7 @@ final class TaskListManager
         $queryBuilder = $this->taskRepository->getTasks($id);
         $this->applyCompleteFilter($queryBuilder, $request);
         $this->applyStatusFilter($queryBuilder, $request);
-        return  $queryBuilder;
+        return $queryBuilder;
     }
 
     private function applyCompleteFilter(QueryBuilder $queryBuilder, Request $request): void
@@ -41,5 +43,4 @@ final class TaskListManager
                 ->setParameter('status', $status);
         }
     }
-
 }

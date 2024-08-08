@@ -7,10 +7,9 @@ namespace App\Controller\Api\V1;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task;
-use App\DTO\TaskResponse;
-use App\Enum\PriorityEnum;
 use App\Enum\TaskStatusEnum;
 use App\Serializer\AccessGroup;
+use App\Service\ExcelExportService;
 use App\Service\TaskServiceInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes\Delete;
@@ -36,9 +35,11 @@ use Symfony\Component\Routing\Attribute\Route;
 final class TaskController extends AbstractController
 {
     public function __construct(
-        private readonly TaskServiceInterface $taskService
+        private readonly TaskServiceInterface $taskService,
+        private readonly ExcelExportService $excelExportService
     ) {
     }
+
     #[Post(
         summary: 'Crete Task',
         requestBody: new RequestBody(
@@ -49,46 +50,23 @@ final class TaskController extends AbstractController
                     mediaType: 'application/json',
                     schema: new Schema(
                         properties: [
-                            new Property(
-                                property: 'title',
-                                title: 'title',
-                                type: 'string'
-                            ),
-                            new Property(
-                                property: 'description',
-                                title: 'title',
-                                type: 'string'
-                            ),
-                            new Property(
-                                property: 'dueDate',
-                                title: '2024-08-01 02:24:21',
-                                type: 'date'
-                            ),
+                            new Property(property: 'title', title: 'title', type: 'string'),
+                            new Property(property: 'description', title: 'title', type: 'string'),
+                            new Property(property: 'dueDate', title: '2024-08-01 02:24:21', type: 'date'),
                             new Property(
                                 property: 'taskStatus',
                                 title: 'created',
                                 type: 'string',
                                 example: 'created'
                             ),
-                            new Property(
-                                property: 'priority',
-                                title: "1",
-                                type: 'integer',
-                                example: 1
-                            ),
-                            new Property(
-                                property: 'isComplete',
-                                title: 'true',
-                                type: 'boolean',
-                                example: true,
-                            ),
+                            new Property(property: 'priority', title: '1', type: 'integer', example: 1),
+                            new Property(property: 'isComplete', title: 'true', type: 'boolean', example: true),
 
                         ],
                         type: 'object',
                     )
                 ),
             ]
-
         ),
         tags: ['Tasks'],
         parameters: [
@@ -104,7 +82,7 @@ final class TaskController extends AbstractController
                 response: HttpResponse::HTTP_OK,
                 description: 'Task update',
                 content: [
-                    new Model(type: TaskResponse::class, groups: [
+                    new Model(type: Task::class, groups: [
                         AccessGroup::TASKS_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),
@@ -114,15 +92,19 @@ final class TaskController extends AbstractController
     )]
     #[Route('tasks', name: 'tasks_create', methods: 'POST', format: 'json')]
     public function create(
-        #[MapQueryString] PassphraseDTO $passphraseDTO,
-        #[MapRequestPayload] Task $taskDTO
+        #[MapQueryString]
+        PassphraseDTO $passphraseDTO,
+        #[MapRequestPayload]
+        Task $taskDTO
     ): JsonResponse {
         try {
             $task = $this->taskService->createTask($passphraseDTO, $taskDTO);
-
             return $this->json([
                 'data' => $task,
-            ], HttpResponse::HTTP_CREATED);
+            ], HttpResponse::HTTP_CREATED, [], [
+                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+            ]);
+
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
         }
@@ -135,80 +117,74 @@ final class TaskController extends AbstractController
         parameters: [
             new Parameter(
                 name: 'passphrase',
-                description: 'The passphrase of the task to delete.',
+                description: 'The passphrase of the task',
                 in: 'query',
                 required: true,
             ),
+
             new Parameter(
                 name: 'isComplete',
                 description: 'Filter tasks by complete',
                 in: 'query',
                 required: false,
                 examples: [
-                    new Examples(
-                        example: "true",
-                        summary: 'Task by complete',
-                        value: "true"
-                    ),
-                    new Examples(
-                        example: "false",
-                        summary: 'Task by not complete',
-                        value: "false"
-                    ),
+                    new Examples(example: 'true', summary: 'Task by complete', value: 'true'),
+                    new Examples(example: 'false', summary: 'Task by not complete', value: 'false'),
                 ]
             ),
             new Parameter(
                 name: 'status',
-                description: 'Filter status by tasks',
+                description: 'Filter by task status',
                 in: 'query',
                 required: false,
-                examples: [
-                    new Examples(
-                        example: TaskStatusEnum::CREATED->value,
-                        summary: 'Task Status created',
-                        value: TaskStatusEnum::CREATED->value
-                    ),
-                    new Examples(
-                        example: TaskStatusEnum::DONE->value,
-                        summary: 'Task Status done',
-                        value: TaskStatusEnum::DONE->value
-                    ),
-                    new Examples(
-                        example: TaskStatusEnum::FAILED->value,
-                        summary: 'Task Status failed',
-                        value: TaskStatusEnum::FAILED->value
-                    ),
-                    new Examples(
-                        example: TaskStatusEnum::IN_PROGRESS->value,
-                        summary: 'Task Status in progress',
-                        value: TaskStatusEnum::IN_PROGRESS->value
-                    ),
-                ]
+                schema: new Schema(
+                    type: 'string',
+                    enum: [
+                        TaskStatusEnum::DONE,
+                        TaskStatusEnum::FAILED,
+                        TaskStatusEnum::CREATED,
+                        TaskStatusEnum::IN_PROGRESS,
+                    ]
+                )
             ),
+
         ],
+
         responses: [
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'Tasks get',
-                content: [new Model(type: TaskResponse::class, groups: [AccessGroup::TASKS_READ])]
+                content: [
+                    new Model(type: Task::class, groups: [
+                        AccessGroup::TASKS_READ,
+                        AccessGroup::PASSPHRASE_CREATE_RESPONSE,
+                    ]),
+                ]
             ),
         ]
     )]
     #[Route('tasks', name: 'tasks_index', methods: 'GET', format: 'json')]
     public function index(
         Request $request,
-        #[MapQueryString] PassphraseDTO $passphraseDTO,
-        #[MapQueryString] Meta $meta
+        #[MapQueryString]
+        PassphraseDTO $passphraseDTO,
+        #[MapQueryString]
+        Meta $meta
     ): JsonResponse {
 
         try {
+
             $tasks = $this->taskService->getTasks($request, $passphraseDTO->passphrase, $meta);
             $data['data'] = [
                 'tasks' => $tasks->getItems(),
                 'meta' => $tasks->getMeta(),
             ];
 
-            return $this->json($data, HttpResponse::HTTP_OK);
+            return $this->json($data
+            , HttpResponse::HTTP_CREATED, [], [
+                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+            ]);
+
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
         }
@@ -218,12 +194,7 @@ final class TaskController extends AbstractController
         summary: 'Get Task',
         tags: ['Tasks'],
         parameters: [
-            new Parameter(
-                name: 'id',
-                description: 'The ID of the task to delete.',
-                in: 'path',
-                required: true,
-            ),
+            new Parameter(name: 'id', description: 'The ID of the task to delete.', in: 'path', required: true),
             new Parameter(
                 name: 'passphrase',
                 description: 'The passphrase of the task to delete.',
@@ -235,7 +206,7 @@ final class TaskController extends AbstractController
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'Task get by id',
-                content: [new Model(type: TaskResponse::class, groups: [AccessGroup::TASKS_READ])]
+                content: [new Model(type: Task::class, groups: [AccessGroup::TASKS_READ])]
             ),
         ]
     )]
@@ -244,10 +215,11 @@ final class TaskController extends AbstractController
     {
         try {
             $task = $this->taskService->getTask($passphraseDTO, id: $id);
-
             return $this->json([
                 'data' => $task,
-            ], HttpResponse::HTTP_OK);
+            ], HttpResponse::HTTP_CREATED, [], [
+                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+            ]);
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
         }
@@ -258,12 +230,7 @@ final class TaskController extends AbstractController
         summary: 'Delete Task',
         tags: ['Tasks'],
         parameters: [
-            new Parameter(
-                name: 'id',
-                description: 'The ID of the task to delete.',
-                in: 'path',
-                required: true,
-            ),
+            new Parameter(name: 'id', description: 'The ID of the task to delete.', in: 'path', required: true),
             new Parameter(
                 name: 'passphrase',
                 description: 'The passphrase of the task to delete.',
@@ -301,46 +268,23 @@ final class TaskController extends AbstractController
                     mediaType: 'application/json',
                     schema: new Schema(
                         properties: [
-                            new Property(
-                                property: 'title',
-                                title: 'title',
-                                type: 'string'
-                            ),
-                            new Property(
-                                property: 'description',
-                                title: 'title',
-                                type: 'string'
-                            ),
-                            new Property(
-                                property: 'dueDate',
-                                title: '2024-08-01 02:24:21',
-                                type: 'date'
-                            ),
+                            new Property(property: 'title', title: 'title', type: 'string'),
+                            new Property(property: 'description', title: 'title', type: 'string'),
+                            new Property(property: 'dueDate', title: '2024-08-01 02:24:21', type: 'date'),
                             new Property(
                                 property: 'taskStatus',
                                 title: 'created',
                                 type: 'string',
                                 example: 'created'
                             ),
-                            new Property(
-                                property: 'priority',
-                                title: "1",
-                                type: 'integer',
-                                example: 1
-                            ),
-                            new Property(
-                                property: 'isComplete',
-                                title: 'true',
-                                type: 'boolean',
-                                example: true,
-                            ),
+                            new Property(property: 'priority', title: '1', type: 'integer', example: 1),
+                            new Property(property: 'isComplete', title: 'true', type: 'boolean', example: true),
 
                         ],
                         type: 'object',
                     )
                 ),
             ]
-
         ),
         tags: ['Tasks'],
         parameters: [
@@ -350,19 +294,14 @@ final class TaskController extends AbstractController
                 in: 'query',
                 required: true,
             ),
-            new Parameter(
-                name: 'id',
-                description: 'The ID of the task to update.',
-                in: 'path',
-                required: true,
-            ),
+            new Parameter(name: 'id', description: 'The ID of the task to update.', in: 'path', required: true),
         ],
         responses: [
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'Task update',
                 content: [
-                    new Model(type: TaskResponse::class, groups: [
+                    new Model(type: Task::class, groups: [
                         AccessGroup::TASKS_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),
@@ -372,18 +311,29 @@ final class TaskController extends AbstractController
     )]
     #[Route('task/{id}', name: 'tasks_update', methods: 'PUT', format: 'json')]
     public function update(
-        #[MapQueryString] PassphraseDTO $passphraseDTO,
+        #[MapQueryString]
+        PassphraseDTO $passphraseDTO,
         int $id,
-        #[MapRequestPayload] Task $taskDTO
+        #[MapRequestPayload]
+        Task $taskDTO
     ): JsonResponse {
         try {
             $task = $this->taskService->updateTask($passphraseDTO, id: $id, taskDTO: $taskDTO);
 
             return $this->json([
                 'data' => $task,
-            ], HttpResponse::HTTP_OK);
+            ], HttpResponse::HTTP_CREATED, [], [
+                'groups' => [ AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+            ]);
+
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
         }
+    }
+
+    #[Route('export', name: 'tasks_export', methods: 'GET', format: 'json')]
+    public function export(#[MapQueryString] PassphraseDTO $passphraseDTO): HttpResponse
+    {
+        return $this->excelExportService->export($passphraseDTO->passphrase);
     }
 }

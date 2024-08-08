@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\DTO\Passphrase as PassphraseDTO;
 use App\Entity\Passphrase;
 use Doctrine\ORM\EntityManagerInterface;
-use App\DTO\PassphraseResponse as PassphraseResponseDTO;
+
 final readonly class PassphraseService implements PassphraseInterface
 {
     public function __construct(
@@ -15,7 +16,7 @@ final readonly class PassphraseService implements PassphraseInterface
     ) {
     }
 
-    public function createPassphrase(): PassphraseResponseDTO
+    public function createPassphrase(): PassphraseDTO
     {
         $passphraseData = $this->apiClient->get();
         if ($passphraseData) {
@@ -23,7 +24,7 @@ final readonly class PassphraseService implements PassphraseInterface
             $passphrase->setName($passphraseData['password']);
             $this->entityManager->persist($passphrase);
             $this->entityManager->flush();
-            return new PassphraseResponseDTO($passphrase->getId(), $passphrase->getName());
+            return new PassphraseDTO( $passphrase->getName(), $passphrase->getId());
         }
         throw new \InvalidArgumentException('Invalid Passphrase');
     }

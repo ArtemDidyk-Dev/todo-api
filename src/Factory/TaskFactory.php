@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Factory;
 
 use App\Entity\Task;
@@ -26,7 +28,7 @@ final class TaskFactory extends PersistentProxyObjectFactory
             'passphrase' => null,
             'priority' => self::faker()->randomElement(PriorityEnum::cases()),
             'status' => self::faker()->randomElement(TaskStatusEnum::cases()),
-            'title' => self::faker()->text(255),
+            'title' => self::faker()->text(20),
             'complete' => self::faker()->boolean(),
             'updated' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
         ];

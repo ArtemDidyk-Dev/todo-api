@@ -7,8 +7,8 @@ namespace App\Service;
 use App\Builder\TaskBuilder;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
-use App\DTO\TaskResponse as TaskResponseDTO;
 use App\DTO\Task as TaskDto;
+use App\Entity\Task;
 use App\Manager\TaskListManager;
 use App\Repository\PassphraseRepository;
 use App\Repository\TaskRepository;
@@ -16,9 +16,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-final readonly class TaskServiceService implements TaskServiceInterface
+final readonly class TaskService implements TaskServiceInterface
 {
-    // TaskServiceInterface
     public function __construct(
         private PassphraseRepository $passphraseRepository,
         private EntityManagerInterface $manager,
@@ -29,7 +28,7 @@ final readonly class TaskServiceService implements TaskServiceInterface
     ) {
     }
 
-    public function createTask(PassphraseDTO $passphraseDTO, TaskDTO $taskDTO): TaskResponseDTO
+    public function createTask(PassphraseDTO $passphraseDTO, TaskDTO $taskDTO): TaskDto
     {
         $passphrase = $this->passphraseRepository->findOneBy([
             'name' => $passphraseDTO->passphrase,
@@ -63,7 +62,22 @@ final readonly class TaskServiceService implements TaskServiceInterface
             );
     }
 
-    public function getTask(PassphraseDTO $passphraseDTO, int $id): TaskResponseDTO
+    /**
+     * @param string $passphrase
+     * @return TaskResponse[]
+     */
+    public function getAll(string $passphrase): array
+    {
+        /** @var Task[] $tasks */
+        $tasks = $this->taskRepository->getAll($passphrase);
+        $taskDTOs = [];
+        foreach ($tasks as $task) {
+            $taskDTOs[] = $this->taskBuilder->mapToDto($task);
+        }
+        return  $taskDTOs;
+    }
+
+    public function getTask(PassphraseDTO $passphraseDTO, int $id): TaskDto
     {
         $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
         if ($data === null) {
@@ -83,7 +97,7 @@ final readonly class TaskServiceService implements TaskServiceInterface
         $this->manager->flush();
     }
 
-    public function updateTask(PassphraseDTO $passphraseDTO, int $id, TaskDTO $taskDTO): TaskResponseDTO
+    public function updateTask(PassphraseDTO $passphraseDTO, int $id, TaskDTO $taskDTO): TaskDto
     {
         $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
         if ($data === null) {

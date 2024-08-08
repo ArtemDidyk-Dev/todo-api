@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DataFixtures;
 
 use App\Factory\PassphraseFactory;
@@ -15,7 +17,7 @@ class AppFixtures extends Fixture
 
         foreach ($passphrases as $passphrase) {
             TaskFactory::createMany(15, [
-                'passphrase' => $passphrase
+                'passphrase' => $passphrase,
             ]);
         }
 
