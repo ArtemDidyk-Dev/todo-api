@@ -10,30 +10,32 @@ use App\DTO\Passphrase as PassphraseDto;
 use App\Entity\Passphrase as PassphraseEntity;
 use App\Entity\Task as TaskEntity;
 
-class TaskBuilder
+final readonly class TaskBuilder
 {
     public function mapToDto(TaskEntity $task): TaskDto
     {
-        return new TaskDto(
-            title: $task->getTitle(),
-            description: $task->getDescription(),
-            id: $task->getId(),
-            passphrase: new PassphraseDTO($task->getPassphrase()->getName(), $task->getPassphrase()->getId()),
-            dueDate: $task->getDueDate()?->format('Y-m-d H:i:s'),
-            taskStatus: $task->getStatus(),
-            priority: $task->getPriority(),
-            isComplete: $task->isComplete()
+        $taskDto = new TaskDto();
+        $taskDto->id = $task->getId();
+        $taskDto->title = $task->getTitle();
+        $taskDto->description = $task->getDescription();
+        $taskDto->status = $task->getStatus();
+        $taskDto->dueDate = $task->getDueDate();
+        $taskDto->priority = $task->getPriority();
+        $taskDto->passphrase = (new PassphraseDTO())
+            ->setId($task->getPassphrase()->getId())->setPassphrase(
+            $task->getPassphrase()->getName()
         );
+        $taskDto->isComplete = $task->isComplete();
+        return $taskDto;
     }
 
     public function mapToModel(TaskDto $task, PassphraseEntity $passphrase): TaskEntity
     {
-        $dueDate = $task->dueDate ? new \DateTimeImmutable($task->dueDate) : null;
 
         return (new TaskEntity())
             ->setTitle($task->title)
             ->setDescription($task->description)
-            ->setDueDate($dueDate)
+            ->setDueDate($task->dueDate)
             ->setPriority($task->priority)
             ->setStatus($task->taskStatus)
             ->setComplete($task->isComplete)
@@ -42,13 +44,12 @@ class TaskBuilder
 
     public function updateFromDto(TaskEntity $task, TaskDto $taskDTO): TaskEntity
     {
-        $dueDate = $taskDTO->dueDate ? new \DateTimeImmutable($taskDTO->dueDate) : null;
-        $task->setTitle($taskDTO->title)
-            ->setDescription($taskDTO->description)
-            ->setDueDate($dueDate)
-            ->setPriority($taskDTO->priority)
-            ->setComplete($taskDTO->isComplete)
-            ->setStatus($taskDTO->taskStatus);
+        $task->setTitle($taskDTO->title ?? $task->getTitle());
+        $task->setDescription($taskDTO->description ?? $task->getDescription());
+        $task->setDueDate($taskDTO->dueDate ?? $task->getDueDate());
+        $task->setPriority($taskDTO->priority ?? $task->getPriority());
+        $task->setStatus($taskDTO->taskStatus ?? $task->getStatus());
+        $task->setComplete($taskDTO->isComplete ?? $task->isComplete());
 
         return $task;
     }

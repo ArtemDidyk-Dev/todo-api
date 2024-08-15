@@ -39,24 +39,30 @@ class Task
 
     #[ORM\Column(type: 'integer', enumType: PriorityEnum::class)]
     #[Assert\Type('integer')]
-    private PriorityEnum $priority = PriorityEnum::Low;
-
+    private PriorityEnum $priority;
     #[ORM\Column(type: 'string', enumType: TaskStatusEnum::class)]
     #[Assert\Type('string')]
-    private TaskStatusEnum $status = TaskStatusEnum::CREATED;
+    private TaskStatusEnum $status;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
     private Passphrase $passphrase;
 
     #[ORM\Column(type: Types::BOOLEAN)]
-    private bool $isComplete = false;
+    private bool $isComplete;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $created;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $updated;
+
+    public function __construct()
+    {
+        $this->status = TaskStatusEnum::CREATED;
+        $this->priority = PriorityEnum::Low;
+        $this->isComplete = false;
+    }
 
     public function getId(): int
     {

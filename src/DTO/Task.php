@@ -4,46 +4,37 @@ declare(strict_types=1);
 
 namespace App\DTO;
 
+
 use App\Enum\PriorityEnum;
 use App\Enum\TaskStatusEnum;
 use App\Serializer\AccessGroup;
+use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
-final readonly class Task
+ final class Task
 {
-    public function __construct(
-        #[Assert\NotBlank]
-        #[Assert\Type('string')]
-        #[Groups([AccessGroup::TASKS_READ, AccessGroup::TASKS_CREATE])]
-        public string $title,
+    #[Groups(AccessGroup::TASK_READ)]
+    public int $id;
+    #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE, AccessGroup::TASK_EDIT])]
+    public string $title;
 
-        #[Assert\NotBlank]
-        #[Assert\Type('string')]
-        #[Groups([AccessGroup::TASKS_READ, AccessGroup::TASKS_CREATE])]
-        public string $description,
+    #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE, AccessGroup::TASK_EDIT])]
+    public string $description;
 
-        #[Groups(AccessGroup::TASKS_READ)]
-        public ?int $id = null,
+    #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE])]
+    public TaskStatusEnum $taskStatus;
 
-        #[Groups(AccessGroup::TASKS_READ)]
-        public ?Passphrase $passphrase = null,
+    #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE])]
+    public PriorityEnum $priority;
 
-        #[Assert\Type('string')]
-        #[Groups([AccessGroup::TASKS_READ, AccessGroup::TASKS_CREATE])]
-        public ?string $dueDate = null,
+    #[Groups(AccessGroup::TASK_READ)]
+    public Passphrase $passphrase;
 
-        #[Assert\NotBlank]
-        #[Groups([AccessGroup::TASKS_READ, AccessGroup::TASKS_CREATE])]
-        public TaskStatusEnum $taskStatus = TaskStatusEnum::CREATED,
+    #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE])]
+    public ?DateTimeImmutable $dueDate = null;
 
-        #[Assert\NotBlank]
-        #[Groups([AccessGroup::TASKS_READ, AccessGroup::TASKS_CREATE])]
-        public PriorityEnum $priority = PriorityEnum::Low,
+    #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE])]
+    public bool $isComplete;
 
-        #[Assert\Type('bool')]
-        #[Groups([AccessGroup::TASKS_READ, AccessGroup::TASKS_CREATE])]
-        public bool $isComplete = false,
-    ) {
-    }
+
 }

@@ -24,7 +24,12 @@ final readonly class PassphraseService implements PassphraseInterface
             $passphrase->setName($passphraseData['password']);
             $this->entityManager->persist($passphrase);
             $this->entityManager->flush();
-            return new PassphraseDTO( $passphrase->getName(), $passphrase->getId());
+
+            return (new PassphraseDTO())
+                ->setId($passphrase->getId())
+                ->setPassphrase(
+                    $passphrase->getName()
+                );
         }
         throw new \InvalidArgumentException('Invalid Passphrase');
     }

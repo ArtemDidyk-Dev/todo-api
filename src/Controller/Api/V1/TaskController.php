@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1;
 
+use App\DTO\Export;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task;
+use App\Entity\Task as TaskEntity;
+use App\Enum\ExportEnum;
 use App\Enum\TaskStatusEnum;
 use App\Serializer\AccessGroup;
-use App\Service\ExcelExportService;
+use App\Service\ExportFactory;
 use App\Service\TaskServiceInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes\Delete;
@@ -18,9 +21,8 @@ use OpenApi\Attributes\Get;
 use OpenApi\Attributes\JsonContent;
 use OpenApi\Attributes\MediaType;
 use OpenApi\Attributes\Parameter;
+use OpenApi\Attributes\Patch;
 use OpenApi\Attributes\Post;
-use OpenApi\Attributes\Property;
-use OpenApi\Attributes\Put;
 use OpenApi\Attributes\RequestBody;
 use OpenApi\Attributes\Response;
 use OpenApi\Attributes\Schema;
@@ -37,7 +39,7 @@ final class TaskController extends AbstractController
 {
     public function __construct(
         private readonly TaskServiceInterface $taskService,
-        private readonly ExcelExportService $excelExportService
+        private readonly ExportFactory $exportFactory,
     ) {
     }
 
@@ -49,7 +51,7 @@ final class TaskController extends AbstractController
             content: new JsonContent(
                 ref: new Model(
                     type: Task::class,
-                    groups: [AccessGroup::TASKS_CREATE]
+                    groups: [AccessGroup::TASK_CREATE]
                 )
             )
         ),
@@ -68,7 +70,7 @@ final class TaskController extends AbstractController
                 description: 'Task update',
                 content: [
                     new Model(type: Task::class, groups: [
-                        AccessGroup::TASKS_READ,
+                        AccessGroup::TASK_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),
                 ]
@@ -82,8 +84,8 @@ final class TaskController extends AbstractController
         )]
         PassphraseDTO $passphraseDTO,
         #[MapRequestPayload(
-            serializationContext: ['groups' => [AccessGroup::TASKS_CREATE]],
-            validationGroups: [AccessGroup::TASKS_CREATE]
+            serializationContext: ['groups' => [AccessGroup::TASK_CREATE]],
+            validationGroups: [AccessGroup::TASK_CREATE]
         )]
         Task $taskDTO
     ): JsonResponse {
@@ -94,7 +96,7 @@ final class TaskController extends AbstractController
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
             ]);
 
         } catch (\InvalidArgumentException $exception) {
@@ -148,7 +150,7 @@ final class TaskController extends AbstractController
                 description: 'Tasks get',
                 content: [
                     new Model(type: Task::class, groups: [
-                        AccessGroup::TASKS_READ,
+                        AccessGroup::TASK_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),
                 ]
@@ -179,7 +181,7 @@ final class TaskController extends AbstractController
                 ,
                 HttpResponse::HTTP_CREATED, [],
                 [
-                    'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                    'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
                 ]
             );
 
@@ -204,7 +206,7 @@ final class TaskController extends AbstractController
             new Response(
                 response: HttpResponse::HTTP_OK,
                 description: 'Task get by id',
-                content: [new Model(type: Task::class, groups: [AccessGroup::TASKS_READ])]
+                content: [new Model(type: Task::class, groups: [AccessGroup::TASK_READ])]
             ),
         ]
     )]
@@ -222,7 +224,7 @@ final class TaskController extends AbstractController
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
             ]);
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
@@ -267,7 +269,7 @@ final class TaskController extends AbstractController
         }
     }
 
-    #[Put(
+    #[Patch(
         summary: 'Update Task',
         requestBody: new RequestBody(
             description: 'Data for create task.',
@@ -275,7 +277,7 @@ final class TaskController extends AbstractController
             content: new JsonContent(
                 ref: new Model(
                     type: Task::class,
-                    groups: [AccessGroup::TASKS_CREATE]
+                    groups: [AccessGroup::TASK_CREATE]
                 )
             )
         ),
@@ -295,35 +297,33 @@ final class TaskController extends AbstractController
                 description: 'Task update',
                 content: [
                     new Model(type: Task::class, groups: [
-                        AccessGroup::TASKS_READ,
+                        AccessGroup::TASK_READ,
                         AccessGroup::PASSPHRASE_CREATE_RESPONSE,
                     ]),
                 ]
             ),
         ]
     )]
-    #[Route('task/{id}', name: 'tasks_update', methods: 'PUT', format: 'json')]
-
-
+    #[Route('task/{id}', name: 'tasks_update', methods: 'PATCH', format: 'json')]
     public function update(
         #[MapQueryString(
             serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
         )]
         PassphraseDTO $passphraseDTO,
-        int $id,
+        TaskEntity $task,
         #[MapRequestPayload(
-            serializationContext: ['groups' => [AccessGroup::TASKS_CREATE]],
-            validationGroups: [AccessGroup::TASKS_CREATE]
+            serializationContext: ['groups' => [AccessGroup::TASK_EDIT]],
+            validationGroups: [AccessGroup::TASK_EDIT]
         )]
         Task $taskDTO
     ): JsonResponse {
         try {
-            $task = $this->taskService->updateTask($passphraseDTO, id: $id, taskDTO: $taskDTO);
+            $task = $this->taskService->updateTask($passphraseDTO, $task, $taskDTO);
 
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [AccessGroup::TASKS_READ, AccessGroup::PASSPHRASE_CREATE],
+                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
             ]);
 
         } catch (\InvalidArgumentException $exception) {
@@ -331,9 +331,63 @@ final class TaskController extends AbstractController
         }
     }
 
+    #[Get(
+        summary: 'Export Tasks',
+        tags: ['Tasks'],
+        parameters: [
+            new Parameter(
+                name: 'passphrase',
+                description: 'The passphrase of the task',
+                in: 'query',
+                required: true,
+            ),
+
+            new Parameter(
+                name: 'type',
+                description: 'Type export tasks',
+                in: 'query',
+                required: false,
+                schema: new Schema(
+                    type: 'string',
+                    enum: [
+                        ExportEnum::EXCEL,
+                        ExportEnum::CSV,
+                    ]
+                )
+            ),
+
+        ],
+
+        responses: [
+            new Response(
+                response: HttpResponse::HTTP_OK,
+                description: 'Download file',
+                content: [
+                    'application/octet-stream' => new MediaType(
+                        mediaType: 'application/octet-stream',
+                        schema: new Schema(
+                            type: 'string',
+                            format: 'binary'
+                        )
+                    )
+                ],
+            ),
+        ]
+    )]
     #[Route('export', name: 'tasks_export', methods: 'GET', format: 'json')]
-    public function export(#[MapQueryString] PassphraseDTO $passphraseDTO): HttpResponse
-    {
-        return $this->excelExportService->export($passphraseDTO->passphrase);
+    public function export(
+        #[MapQueryString(
+            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
+        )]
+        PassphraseDTO $passphraseDTO,
+        #[MapQueryString] Export $exportDTO
+    ): HttpResponse {
+        try {
+            return $this->exportFactory->createExport($exportDTO->type, $this->taskService)->export(
+                $passphraseDTO->passphrase
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
+        }
     }
 }

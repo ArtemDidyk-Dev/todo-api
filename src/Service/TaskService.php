@@ -8,13 +8,15 @@ use App\Builder\TaskBuilder;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task as TaskDto;
-use App\Entity\Task;
+use App\Entity\Task as TaskEntity;
 use App\Manager\TaskListManager;
 use App\Repository\PassphraseRepository;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpFoundation\Request;
+
 
 final readonly class TaskService implements TaskServiceInterface
 {
@@ -64,13 +66,14 @@ final readonly class TaskService implements TaskServiceInterface
 
     /**
      * @param string $passphrase
-     * @return TaskResponse[]
+     * @return TaskDto[]
      */
     public function getAll(string $passphrase): array
     {
-        /** @var Task[] $tasks */
+        /** @var TaskDto[] $tasks */
         $tasks = $this->taskRepository->getAll($passphrase);
         $taskDTOs = [];
+        /** @var TaskEntity $task */
         foreach ($tasks as $task) {
             $taskDTOs[] = $this->taskBuilder->mapToDto($task);
         }
@@ -97,15 +100,13 @@ final readonly class TaskService implements TaskServiceInterface
         $this->manager->flush();
     }
 
-    public function updateTask(PassphraseDTO $passphraseDTO, int $id, TaskDTO $taskDTO): TaskDto
+    public function updateTask(PassphraseDTO $passphraseDTO, TaskEntity $task, TaskDTO $taskDTO): TaskDto
     {
-        $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
-        if ($data === null) {
-            throw new \InvalidArgumentException('Task not found');
+        if($passphraseDTO->passphrase !== $task->getPassphrase()->getName()) {
+            throw new BadRequestException('bad passphrase');
         }
-        $task = $this->taskBuilder->updateFromDto($data, $taskDTO);
+        $taskUpdated = $this->taskBuilder->updateFromDto($task, $taskDTO);
         $this->manager->flush();
-
-        return $this->taskBuilder->mapToDto($task);
+        return $this->taskBuilder->mapToDto($taskUpdated);
     }
 }

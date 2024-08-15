@@ -9,17 +9,28 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final readonly class Passphrase
+final class Passphrase
 {
-    public function __construct(
+    #[Groups([AccessGroup::PASSPHRASE_CREATE_RESPONSE, AccessGroup::TASK_READ])]
+    public string $passphrase;
+    #[Assert\Type('int')]
+    #[Groups([AccessGroup::PASSPHRASE_CREATE])]
+    public int $id;
 
-        #[Assert\NotBlank]
-        #[Groups([AccessGroup::PASSPHRASE_CREATE_RESPONSE, AccessGroup::TASKS_READ])]
-        public string $passphrase,
+    public function setId(int $id): self
+    {
+        $this->id = $id;
 
-        #[Assert\Type('int')]
-        #[Groups([AccessGroup::PASSPHRASE_CREATE])]
-        public ?int $id = null,
-    ) {
+        return $this;
     }
+
+
+    public function setPassphrase(string $passphrase): self
+    {
+        $this->passphrase = $passphrase;
+
+        return $this;
+    }
+
+
 }

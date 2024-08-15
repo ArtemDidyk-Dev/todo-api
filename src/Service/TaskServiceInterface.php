@@ -8,6 +8,7 @@ use App\DTO\Meta;
 use App\DTO\Passphrase;
 use App\DTO\Task as TaskDTO;
 use Symfony\Component\HttpFoundation\Request;
+use App\Entity\Task as TaskEntity;
 
 interface TaskServiceInterface
 {
@@ -19,7 +20,7 @@ interface TaskServiceInterface
 
     public function destroyTask(Passphrase $passphraseDTO, int $id): void;
 
-    public function updateTask(Passphrase $passphraseDTO, int $id, TaskDTO $taskDTO): TaskDTO;
+    public function updateTask(Passphrase $passphraseDTO, TaskEntity $task, TaskDTO $taskDTO): TaskDTO;
 
     public function getAll(string $passphrase): array;
 }

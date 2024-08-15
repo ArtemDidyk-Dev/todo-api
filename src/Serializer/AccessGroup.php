@@ -12,7 +12,11 @@ class AccessGroup
 
     public const string PASSPHRASE_CREATE_RESPONSE = 'passphrase:create:response';
 
-    public const string TASKS_READ = 'task:read';
+    public const string TASK_READ = 'task:read';
 
-    public const string TASKS_CREATE = 'task:create';
+    public const string TASK_CREATE = 'task:create';
+
+    public const string TASK_EDIT = 'task:edit';
+
+
 }
