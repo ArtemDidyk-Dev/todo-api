@@ -18,7 +18,7 @@ final readonly class TaskBuilder
         $taskDto->id = $task->getId();
         $taskDto->title = $task->getTitle();
         $taskDto->description = $task->getDescription();
-        $taskDto->status = $task->getStatus();
+        $taskDto->taskStatus = $task->getStatus();
         $taskDto->dueDate = $task->getDueDate();
         $taskDto->priority = $task->getPriority();
         $taskDto->passphrase = (new PassphraseDTO())

@@ -13,8 +13,9 @@ final class Passphrase
 {
     #[Groups([AccessGroup::PASSPHRASE_CREATE_RESPONSE, AccessGroup::TASK_READ])]
     public string $passphrase;
+
     #[Assert\Type('int')]
-    #[Groups([AccessGroup::PASSPHRASE_CREATE])]
+    #[Groups([AccessGroup::PASSPHRASE_CREATE, AccessGroup::TASK_READ])]
     public int $id;
 
     public function setId(int $id): self
@@ -23,7 +24,6 @@ final class Passphrase
 
         return $this;
     }
-
 
     public function setPassphrase(string $passphrase): self
     {
