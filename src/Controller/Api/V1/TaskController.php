@@ -383,9 +383,7 @@ final class TaskController extends AbstractController
         #[MapQueryString] Export $exportDTO
     ): HttpResponse {
         try {
-            return $this->exportFactory->createExport($exportDTO->type, $this->taskService)->export(
-                $passphraseDTO->passphrase
-            );
+            return $this->exportFactory->createExport($exportDTO->type, $passphraseDTO->passphrase);
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
         }
