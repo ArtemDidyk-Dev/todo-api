@@ -21,16 +21,15 @@ final class TaskFactory extends PersistentProxyObjectFactory
 
     protected function defaults(): array|callable
     {
+
         return [
-            'created' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
             'description' => self::faker()->text(),
-            'dueDate' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
+            'dueDate' => (new \DateTimeImmutable('now'))->modify('+'.random_int(1, 27).' days'),
             'passphrase' => null,
             'priority' => self::faker()->randomElement(PriorityEnum::cases()),
             'status' => self::faker()->randomElement(TaskStatusEnum::cases()),
             'title' => self::faker()->text(20),
             'complete' => self::faker()->boolean(),
-            'updated' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
         ];
     }
 

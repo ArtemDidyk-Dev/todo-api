@@ -36,5 +36,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     #[Groups([AccessGroup::TASK_READ, AccessGroup::TASK_CREATE])]
     public bool $isComplete;
 
+    #[Groups([AccessGroup::TASK_READ])]
+    public bool $expiring;
 
 }

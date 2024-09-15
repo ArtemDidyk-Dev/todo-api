@@ -220,7 +220,6 @@ final class TaskController extends AbstractController
     ): JsonResponse {
         try {
             $task = $this->taskService->getTask($passphraseDTO, id: $id);
-
             return $this->json([
                 'data' => $task,
             ], HttpResponse::HTTP_CREATED, [], [

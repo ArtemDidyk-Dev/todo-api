@@ -8,7 +8,7 @@ use App\Repository\TaskRepository;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\Request;
 
-final class TaskListManager
+final readonly class TaskListManager
 {
     public function __construct(
         private TaskRepository $taskRepository

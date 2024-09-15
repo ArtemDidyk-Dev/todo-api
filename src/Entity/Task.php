@@ -6,16 +6,16 @@ namespace App\Entity;
 
 use App\Enum\PriorityEnum;
 use App\Enum\TaskStatusEnum;
+use App\Listener\TaskListener;
 use App\Repository\TaskRepository;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[ORM\EntityListeners([TaskListener::class])]
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Index(columns: ['title'], name: 'task_title_idx')]
-#[HasLifecycleCallbacks]
 class Task
 {
     #[ORM\Id]
@@ -56,6 +56,9 @@ class Task
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $updated;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $expiring = false;
 
     public function __construct()
     {
@@ -148,25 +151,27 @@ class Task
         return $this;
     }
 
-    public function getCreated(): ?DateTimeImmutable
-    {
-        return $this->created;
-    }
-
-    public function setCreated(?DateTimeImmutable $created): self
-    {
-        $this->created = $created;
-        return $this;
-    }
-
-    public function getUpdated(): ?DateTimeImmutable
+    public function getUpdated(): DateTimeImmutable
     {
         return $this->updated;
     }
 
-    public function setUpdated(?DateTimeImmutable $updated): self
+    public function setUpdated(DateTimeImmutable $updated): Task
     {
         $this->updated = $updated;
+
+        return $this;
+    }
+
+    public function getCreated(): DateTimeImmutable
+    {
+        return $this->created;
+    }
+
+    public function setCreated(DateTimeImmutable $created): Task
+    {
+        $this->created = $created;
+
         return $this;
     }
 
@@ -182,16 +187,15 @@ class Task
         return $this;
     }
 
-    #[ORM\PrePersist]
-    public function prePersist(): void
+    public function isExpiring(): bool
     {
-        $this->created = new DateTimeImmutable();
-        $this->updated = new DateTimeImmutable();
+        return $this->expiring;
     }
 
-    #[ORM\PreUpdate]
-    public function preUpdate(): void
+    public function setExpiring(bool $expiring): Task
     {
-        $this->updated = new DateTimeImmutable();
+        $this->expiring = $expiring;
+
+        return $this;
     }
 }

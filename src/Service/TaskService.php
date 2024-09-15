@@ -22,16 +22,18 @@ final readonly class TaskService implements TaskServiceInterface
 {
     public function __construct(
         private PassphraseRepository $passphraseRepository,
-        private EntityManagerInterface $manager,
+        private EntityManagerInterface $em,
         private TaskRepository $taskRepository,
         private TaskBuilder $taskBuilder,
         private PaginatorInterface $paginator,
         private TaskListManager $taskListManager,
+        private TaskStatusExpiringUpdater $taskStatusExpiringUpdater,
     ) {
     }
 
     public function createTask(PassphraseDTO $passphraseDTO, TaskDTO $taskDTO): TaskDto
     {
+
         $passphrase = $this->passphraseRepository->findOneBy([
             'name' => $passphraseDTO->passphrase,
         ]);
@@ -39,8 +41,8 @@ final readonly class TaskService implements TaskServiceInterface
             throw new \InvalidArgumentException('Passphrase not found');
         }
         $task = $this->taskBuilder->mapToModel($taskDTO, $passphrase);
-        $this->manager->persist($task);
-        $this->manager->flush();
+        $this->em->persist($task);
+        $this->em->flush();
         return $this->taskBuilder->mapToDto($task);
 
     }
@@ -75,19 +77,23 @@ final readonly class TaskService implements TaskServiceInterface
         $taskDTOs = [];
         /** @var TaskEntity $task */
         foreach ($tasks as $task) {
+            $this->taskStatusExpiringUpdater->update($task);
             $taskDTOs[] = $this->taskBuilder->mapToDto($task);
         }
+        $this->em->flush();
+
         return  $taskDTOs;
     }
 
     public function getTask(PassphraseDTO $passphraseDTO, int $id): TaskDto
     {
-        $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
-        if ($data === null) {
+        $taskEntity = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
+        if ($taskEntity === null) {
             throw new \InvalidArgumentException('Task not found');
         }
-
-        return $this->taskBuilder->mapToDto($data);
+        $this->taskStatusExpiringUpdater->update($taskEntity);
+        $this->em->flush();
+        return $this->taskBuilder->mapToDto($taskEntity);
     }
 
     public function destroyTask(PassphraseDTO $passphraseDTO, int $id): void
@@ -96,8 +102,8 @@ final readonly class TaskService implements TaskServiceInterface
         if ($data === null) {
             throw new \InvalidArgumentException('Task not found');
         }
-        $this->manager->remove($data);
-        $this->manager->flush();
+        $this->em->remove($data);
+        $this->em->flush();
     }
 
     public function updateTask(PassphraseDTO $passphraseDTO, TaskEntity $task, TaskDTO $taskDTO): TaskDto
@@ -106,7 +112,7 @@ final readonly class TaskService implements TaskServiceInterface
             throw new BadRequestException('bad passphrase');
         }
         $taskUpdated = $this->taskBuilder->updateFromDto($task, $taskDTO);
-        $this->manager->flush();
+        $this->em->flush();
         return $this->taskBuilder->mapToDto($taskUpdated);
     }
 }

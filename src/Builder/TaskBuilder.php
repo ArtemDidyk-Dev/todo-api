@@ -26,6 +26,7 @@ final readonly class TaskBuilder
             $task->getPassphrase()->getName()
         );
         $taskDto->isComplete = $task->isComplete();
+        $taskDto->expiring = $task->isExpiring();
         return $taskDto;
     }
 

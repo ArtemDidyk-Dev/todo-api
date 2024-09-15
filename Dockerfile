@@ -20,6 +20,8 @@ WORKDIR /srv/app
 # php extensions installer: https://github.com/mlocati/docker-php-extension-installer
 COPY --from=php_extension_installer --link /usr/bin/install-php-extensions /usr/local/bin/
 
+COPY docker/php/crontabs.12  /var/spool/cron/crontabs.12
+
 # persistent / runtime deps
 RUN apk add --no-cache \
 		acl \
