@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Passphrase;
 use App\Enum\ExportEnum;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -13,7 +14,7 @@ final readonly class ExportFactory
     ) {
     }
 
-    public function createExport(string $type, string $passphrase): StreamedResponse
+    public function createExport(string $type, Passphrase $passphrase): StreamedResponse
     {
         $exportType = ExportEnum::tryFrom($type);
         if ($exportType === null) {

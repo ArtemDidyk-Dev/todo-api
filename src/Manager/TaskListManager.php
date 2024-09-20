@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Manager;
 
+use App\Entity\Passphrase;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,9 +16,9 @@ final readonly class TaskListManager
     ) {
     }
 
-    public function getList(int $id, Request $request): QueryBuilder
+    public function getList(Passphrase $passphrase, Request $request): QueryBuilder
     {
-        $queryBuilder = $this->taskRepository->getTasks($id);
+        $queryBuilder = $this->taskRepository->getTasks($passphrase);
         $this->applyCompleteFilter($queryBuilder, $request);
         $this->applyStatusFilter($queryBuilder, $request);
         return $queryBuilder;

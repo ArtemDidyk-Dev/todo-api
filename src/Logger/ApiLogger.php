@@ -15,9 +15,13 @@ final readonly class ApiLogger
     ) {
     }
 
-    public function log(Request $request, Response $response): void
+    public function log(?Request $request = null, ?Response $response = null): void
     {
-        $this->logger->info($response);
-        $this->logger->info($request);
+        if($request !== null){
+            $this->logger->info($request);
+        }
+        if($response !== null){
+            $this->logger->info($response);
+        }
     }
 }

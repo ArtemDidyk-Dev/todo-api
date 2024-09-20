@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\Passphrase;
 use App\Entity\Task;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -32,11 +33,11 @@ class TaskRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    public function getTasks(int $passphraseId): QueryBuilder
+    public function getTasks(Passphrase $passphrase): QueryBuilder
     {
         return $this->createQueryBuilder('task')
-            ->andWhere('task.passphrase = :passphraseId')
-            ->setParameter('passphraseId', $passphraseId);
+            ->andWhere('task.passphrase = :passphrase')
+            ->setParameter('passphrase', $passphrase);
     }
 
     public function getAll(string $passphrase): array

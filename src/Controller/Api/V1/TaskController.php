@@ -8,6 +8,7 @@ use App\DTO\Export;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task;
+use App\Entity\Passphrase;
 use App\Entity\Task as TaskEntity;
 use App\Enum\ExportEnum;
 use App\Enum\TaskStatusEnum;
@@ -26,6 +27,7 @@ use OpenApi\Attributes\Post;
 use OpenApi\Attributes\RequestBody;
 use OpenApi\Attributes\Response;
 use OpenApi\Attributes\Schema;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -56,14 +58,7 @@ final class TaskController extends AbstractController
             )
         ),
         tags: ['Tasks'],
-        parameters: [
-            new Parameter(
-                name: 'passphrase',
-                description: 'The passphrase of the task to update.',
-                in: 'query',
-                required: true,
-            ),
-        ],
+
         responses: [
             new Response(
                 response: HttpResponse::HTTP_OK,
@@ -77,12 +72,10 @@ final class TaskController extends AbstractController
             ),
         ]
     )]
-    #[Route('tasks', name: 'tasks_create', methods: 'POST')]
+    #[Route('passphrase/{id}/tasks', name: 'tasks_create', methods: 'POST')]
     public function create(
-        #[MapQueryString(
-            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
-        )]
-        PassphraseDTO $passphraseDTO,
+        #[MapEntity]
+        Passphrase $passphrase,
         #[MapRequestPayload(
             serializationContext: ['groups' => [AccessGroup::TASK_CREATE]],
             validationGroups: [AccessGroup::TASK_CREATE]
@@ -90,32 +83,18 @@ final class TaskController extends AbstractController
         Task $taskDTO
     ): JsonResponse {
 
-        try {
-            $task = $this->taskService->createTask($passphraseDTO, $taskDTO);
-
-            return $this->json([
-                'data' => $task,
-            ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
-            ]);
-
-        } catch (\InvalidArgumentException $exception) {
-            return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
-        }
-
+        $task = $this->taskService->createTask($passphrase, $taskDTO);
+        return $this->json([
+            'data' => $task,
+        ], HttpResponse::HTTP_CREATED, [], [
+            'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
+        ]);
     }
 
     #[Get(
         summary: 'Get Tasks',
         tags: ['Tasks'],
         parameters: [
-            new Parameter(
-                name: 'passphrase',
-                description: 'The passphrase of the task',
-                in: 'query',
-                required: true,
-            ),
-
             new Parameter(
                 name: 'isComplete',
                 description: 'Filter tasks by complete',
@@ -157,51 +136,33 @@ final class TaskController extends AbstractController
             ),
         ]
     )]
-    #[Route('tasks', name: 'tasks_index', methods: 'GET', format: 'json')]
+    #[Route('passphrase/{id}/tasks', name: 'tasks_index', methods: 'GET', format: 'json')]
     public function index(
         Request $request,
-        #[MapQueryString(
-            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
-        )]
-        PassphraseDTO $passphraseDTO,
+        #[MapEntity]
+        Passphrase $passphrase,
         #[MapQueryString]
         Meta $meta
     ): JsonResponse {
 
-        try {
-
-            $tasks = $this->taskService->getTasks($request, $passphraseDTO->passphrase, $meta);
-            $data['data'] = [
-                'tasks' => $tasks->getItems(),
-                'meta' => $tasks->getMeta(),
-            ];
-
-            return $this->json(
-                $data
-                ,
-                HttpResponse::HTTP_CREATED, [],
-                [
-                    'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
-                ]
-            );
-
-        } catch (\InvalidArgumentException $exception) {
-            return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
-        }
+        $tasks = $this->taskService->getTasks($request, $passphrase, $meta);
+        $data['data'] = [
+            'tasks' => $tasks->getItems(),
+            'meta' => $tasks->getMeta(),
+        ];
+        return $this->json(
+            $data
+            ,
+            HttpResponse::HTTP_CREATED, [],
+            [
+                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
+            ]
+        );
     }
 
     #[Get(
         summary: 'Get Task',
         tags: ['Tasks'],
-        parameters: [
-            new Parameter(name: 'id', description: 'The ID of the task to delete.', in: 'path', required: true),
-            new Parameter(
-                name: 'passphrase',
-                description: 'The passphrase of the task to delete.',
-                in: 'query',
-                required: true,
-            ),
-        ],
         responses: [
             new Response(
                 response: HttpResponse::HTTP_OK,
@@ -210,39 +171,22 @@ final class TaskController extends AbstractController
             ),
         ]
     )]
-    #[Route('task/{id}', name: 'tasks_show', methods: 'GET', format: 'json')]
+    #[Route('passphrase/{passphraseId}/task/{taskId}', name: 'tasks_show', methods: ['GET'], format: 'json')]
     public function show(
-        #[MapQueryString(
-            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
-        )]
-        PassphraseDTO $passphraseDTO,
-        int $id
+        #[MapEntity(id: 'passphraseId')] Passphrase $passphrase,
+        #[MapEntity(id: 'taskId')] TaskEntity $task
     ): JsonResponse {
-        try {
-            $task = $this->taskService->getTask($passphraseDTO, id: $id);
-            return $this->json([
-                'data' => $task,
-            ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
-            ]);
-        } catch (\InvalidArgumentException $exception) {
-            return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
-        }
-
+        $task = $this->taskService->getTask(passphrase: $passphrase, task: $task);
+        return $this->json([
+            'data' => $task,
+        ], HttpResponse::HTTP_CREATED, [], [
+            'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
+        ]);
     }
 
     #[Delete(
         summary: 'Delete Task',
         tags: ['Tasks'],
-        parameters: [
-            new Parameter(name: 'id', description: 'The ID of the task to delete.', in: 'path', required: true),
-            new Parameter(
-                name: 'passphrase',
-                description: 'The passphrase of the task to delete.',
-                in: 'query',
-                required: true,
-            ),
-        ],
         responses: [
             new Response(
                 response: HttpResponse::HTTP_NO_CONTENT,
@@ -251,21 +195,13 @@ final class TaskController extends AbstractController
             ),
         ]
     )]
-    #[Route('task/{id}', name: 'tasks_destroy', methods: 'DELETE', format: 'json')]
+    #[Route('passphrase/{passphraseId}/task/{taskId}', name: 'tasks_destroy', methods: 'DELETE', format: 'json')]
     public function destroy(
-        #[MapQueryString(
-            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
-        )]
-        PassphraseDTO $passphraseDTO,
-        int $id
+        #[MapEntity(id: 'passphraseId')] Passphrase $passphrase,
+        #[MapEntity(id: 'taskId')] TaskEntity $task
     ): JsonResponse {
-        try {
-            $this->taskService->destroyTask($passphraseDTO, id: $id);
-
-            return $this->json([], HttpResponse::HTTP_NO_CONTENT);
-        } catch (\InvalidArgumentException $exception) {
-            return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
-        }
+        $this->taskService->destroyTask(passphrase: $passphrase, task: $task);
+        return $this->json([], HttpResponse::HTTP_NO_CONTENT);
     }
 
     #[Patch(
@@ -314,33 +250,21 @@ final class TaskController extends AbstractController
             serializationContext: ['groups' => [AccessGroup::TASK_EDIT]],
             validationGroups: [AccessGroup::TASK_EDIT]
         )]
-        Task $taskDTO
+        Task $taskDTO,
     ): JsonResponse {
-        try {
-            $task = $this->taskService->updateTask($passphraseDTO, $task, $taskDTO);
+        $task = $this->taskService->updateTask($passphraseDTO, $task, $taskDTO);
 
-            return $this->json([
-                'data' => $task,
-            ], HttpResponse::HTTP_CREATED, [], [
-                'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
-            ]);
-
-        } catch (\InvalidArgumentException $exception) {
-            return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
-        }
+        return $this->json([
+            'data' => $task,
+        ], HttpResponse::HTTP_CREATED, [], [
+            'groups' => [AccessGroup::TASK_READ, AccessGroup::PASSPHRASE_CREATE],
+        ]);
     }
 
     #[Get(
         summary: 'Export Tasks',
         tags: ['Tasks'],
         parameters: [
-            new Parameter(
-                name: 'passphrase',
-                description: 'The passphrase of the task',
-                in: 'query',
-                required: true,
-            ),
-
             new Parameter(
                 name: 'type',
                 description: 'Type export tasks',
@@ -368,21 +292,19 @@ final class TaskController extends AbstractController
                             type: 'string',
                             format: 'binary'
                         )
-                    )
+                    ),
                 ],
             ),
         ]
     )]
-    #[Route('export', name: 'tasks_export', methods: 'GET', format: 'json')]
+    #[Route('passphrase/{id}/export', name: 'tasks_export', methods: 'GET', format: 'json')]
     public function export(
-        #[MapQueryString(
-            serializationContext: ['groups' => [AccessGroup::PASSPHRASE_CREATE_RESPONSE]],
-        )]
-        PassphraseDTO $passphraseDTO,
+        #[MapEntity]
+        Passphrase $passphrase,
         #[MapQueryString] Export $exportDTO
     ): HttpResponse {
         try {
-            return $this->exportFactory->createExport($exportDTO->type, $passphraseDTO->passphrase);
+            return $this->exportFactory->createExport($exportDTO->type, $passphrase);
         } catch (\InvalidArgumentException $exception) {
             return new JsonResponse($exception->getMessage(), HttpResponse::HTTP_NOT_FOUND);
         }

@@ -2,17 +2,18 @@
 
 namespace App\Service;
 
+use App\Entity\Passphrase;
 use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-readonly class CsvExportService implements ExportInterface
+final readonly class CsvExportService implements ExportInterface
 {
     public function __construct(
         private TaskServiceInterface $taskService
     ) {
     }
 
-    public function export(string $passphrase): StreamedResponse
+    public function export(Passphrase $passphrase): StreamedResponse
     {
         $taskDTOs = $this->taskService->getAll($passphrase);
         $response = new StreamedResponse(function () use ($taskDTOs) {
@@ -21,7 +22,7 @@ readonly class CsvExportService implements ExportInterface
                 throw new \RuntimeException('Could not open stream for writing');
             }
             $csv = Writer::createFromStream($stream);
-            $csv->insertOne(['ID', 'Title', 'Description', 'Status', 'Due Date', 'Is Complete']);
+            $csv->insertOne(['ID', 'Title', 'Description', 'Status', 'Due Date', 'Is Complete', 'is Expiring']);
             foreach ($taskDTOs as $taskDTO) {
                 $dueDate = $taskDTO->dueDate instanceof \DateTimeImmutable ? $taskDTO->dueDate->format(
                     'Y-m-d H:i:s'
@@ -30,9 +31,10 @@ readonly class CsvExportService implements ExportInterface
                     $taskDTO->id,
                     $taskDTO->title,
                     $taskDTO->description,
-                    $taskDTO->status->value,
+                    $taskDTO->taskStatus->value,
                     $dueDate,
                     $taskDTO->isComplete,
+                    $taskDTO->expiring
                 ]);
             }
         });

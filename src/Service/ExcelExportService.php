@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Passphrase;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -12,7 +13,7 @@ final readonly class ExcelExportService implements ExportInterface
     public function __construct(
         private TaskServiceInterface $taskService
     ) {}
-    public function export(string $passphrase): StreamedResponse
+    public function export(Passphrase $passphrase): StreamedResponse
     {
         $taskDTOs = $this->taskService->getAll($passphrase);
         $spreadsheet = new Spreadsheet();
@@ -23,7 +24,8 @@ final readonly class ExcelExportService implements ExportInterface
             ->setCellValue('C1', 'DESCRIPTION')
             ->setCellValue('D1', 'STATUS')
             ->setCellValue('E1', 'DUE DATE')
-            ->setCellValue('F1', 'IS COMPLETE');
+            ->setCellValue('F1', 'IS COMPLETE')
+            ->setCellValue('G1', 'EXPIRATION');
 
         $row = 2;
         foreach ($taskDTOs as $taskDTO) {
@@ -31,9 +33,10 @@ final readonly class ExcelExportService implements ExportInterface
                 ->setCellValue('A'.$row, $taskDTO->id)
                 ->setCellValue('B'.$row, $taskDTO->title)
                 ->setCellValue('C'.$row, $taskDTO->description)
-                ->setCellValue('D'.$row, $taskDTO->status->value)
+                ->setCellValue('D'.$row, $taskDTO->taskStatus->value)
                 ->setCellValue('E'.$row, $taskDTO->dueDate)
-                ->setCellValue('F'.$row, $taskDTO->isComplete);
+                ->setCellValue('F'.$row, $taskDTO->isComplete)
+                ->setCellValue('G'.$row, $taskDTO->expiring);
             $row++;
         }
         $response = new StreamedResponse(function () use ($spreadsheet) {

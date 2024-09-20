@@ -8,54 +8,46 @@ use App\Builder\TaskBuilder;
 use App\DTO\Meta;
 use App\DTO\Passphrase as PassphraseDTO;
 use App\DTO\Task as TaskDto;
+use App\Entity\Passphrase;
 use App\Entity\Task as TaskEntity;
+use App\Exception\BadPassphraseException;
+use App\Exception\NotFoundException;
 use App\Manager\TaskListManager;
-use App\Repository\PassphraseRepository;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 
 final readonly class TaskService implements TaskServiceInterface
 {
     public function __construct(
-        private PassphraseRepository $passphraseRepository,
         private EntityManagerInterface $em,
-        private TaskRepository $taskRepository,
         private TaskBuilder $taskBuilder,
         private PaginatorInterface $paginator,
         private TaskListManager $taskListManager,
         private TaskStatusExpiringUpdater $taskStatusExpiringUpdater,
+        private LoggerInterface $logger,
     ) {
     }
 
-    public function createTask(PassphraseDTO $passphraseDTO, TaskDTO $taskDTO): TaskDto
-    {
 
-        $passphrase = $this->passphraseRepository->findOneBy([
-            'name' => $passphraseDTO->passphrase,
-        ]);
-        if ($passphrase === null) {
-            throw new \InvalidArgumentException('Passphrase not found');
-        }
+    public function createTask(Passphrase $passphrase, TaskDTO $taskDTO): TaskDto
+    {
         $task = $this->taskBuilder->mapToModel($taskDTO, $passphrase);
         $this->em->persist($task);
         $this->em->flush();
         return $this->taskBuilder->mapToDto($task);
-
     }
 
-    public function getTasks(Request $request, string $passphrase, Meta $meta): TaskList
+    /**
+     * @throws NotFoundException
+     */
+    public function getTasks(Request $request, Passphrase $passphrase, Meta $meta): TaskList
     {
-        $passphraseData = $this->passphraseRepository->findOneBy([
-            'name' => $passphrase,
-        ]);
-        if ($passphraseData === null) {
-            throw new \InvalidArgumentException('Passphrase not found');
-        }
-        $tasks = $this->taskListManager->getList($passphraseData->getId(), $request);
+
+        $tasks = $this->taskListManager->getList($passphrase, $request);
         $paginator = $this->paginator->paginate($tasks, $meta->currentPage, $meta->itemsPerPage);
         return (new TaskList($this->taskBuilder))
             ->addTasks($paginator->getItems())
@@ -67,13 +59,13 @@ final readonly class TaskService implements TaskServiceInterface
     }
 
     /**
-     * @param string $passphrase
+     * @param Passphrase $passphrase
      * @return TaskDto[]
      */
-    public function getAll(string $passphrase): array
+    public function getAll(Passphrase $passphrase): array
     {
         /** @var TaskDto[] $tasks */
-        $tasks = $this->taskRepository->getAll($passphrase);
+        $tasks = $passphrase->getTasks();
         $taskDTOs = [];
         /** @var TaskEntity $task */
         foreach ($tasks as $task) {
@@ -85,31 +77,56 @@ final readonly class TaskService implements TaskServiceInterface
         return  $taskDTOs;
     }
 
-    public function getTask(PassphraseDTO $passphraseDTO, int $id): TaskDto
+    /**
+     * @throws NotFoundException
+     */
+    public function getTask(Passphrase $passphrase, TaskEntity $task): TaskDto
     {
-        $taskEntity = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
-        if ($taskEntity === null) {
-            throw new \InvalidArgumentException('Task not found');
+        if (!$passphrase->getTasks()->contains($task)) {
+            $context = [
+                'passphrase' => $passphrase->getId(),
+                'task_id' => $task->getId(),
+            ];
+            $message = 'Resource not found';
+            $this->logger->error($message, $context);
+            throw new NotFoundException();
         }
-        $this->taskStatusExpiringUpdater->update($taskEntity);
+        $this->taskStatusExpiringUpdater->update($task);
         $this->em->flush();
-        return $this->taskBuilder->mapToDto($taskEntity);
+        return $this->taskBuilder->mapToDto($task);
     }
 
-    public function destroyTask(PassphraseDTO $passphraseDTO, int $id): void
+    /**
+     * @throws NotFoundException
+     */
+    public function destroyTask(Passphrase $passphrase, TaskEntity $task): void
     {
-        $data = $this->taskRepository->getPassphraseTaskId($passphraseDTO->passphrase, $id);
-        if ($data === null) {
-            throw new \InvalidArgumentException('Task not found');
+        if (!$passphrase->getTasks()->contains($task)) {
+            $context = [
+                'passphrase' => $passphrase->getId(),
+                'task_id' => $task->getId(),
+            ];
+            $message = 'Resource not found';
+            $this->logger->error($message, $context);
+            throw new NotFoundException();
         }
-        $this->em->remove($data);
+        $this->em->remove($task);
         $this->em->flush();
     }
 
+    /**
+     * @throws BadPassphraseException
+     */
     public function updateTask(PassphraseDTO $passphraseDTO, TaskEntity $task, TaskDTO $taskDTO): TaskDto
     {
         if($passphraseDTO->passphrase !== $task->getPassphrase()->getName()) {
-            throw new BadRequestException('bad passphrase');
+            $context = [
+                'passphrase' => $passphraseDTO->passphrase,
+                'task_id' => $task->getId(),
+            ];
+            $message = 'Bad Passphrase';
+            $this->logger->error($message, $context);
+            throw new BadPassphraseException($message);
         }
         $taskUpdated = $this->taskBuilder->updateFromDto($task, $taskDTO);
         $this->em->flush();
